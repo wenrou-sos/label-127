@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Receipt, Store, ChevronDown, MapPin, CalendarDays, Inbox } from 'lucide-react';
 import { Card, PaymentBadge, Skeleton, SectionTag, Button } from '@/components/ui';
@@ -19,6 +19,11 @@ export function ConsumptionList({
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+    setExpanded(null);
+  }, [records]);
 
   const paged = useMemo(() => records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [records, page]);
   const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));

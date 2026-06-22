@@ -22,6 +22,7 @@ export function MemberQueryBar({ onResult }: { onResult: (m: Member | null) => v
     setError(null);
     if (!/^\d{11}$/.test(phone.trim())) {
       setError('请输入正确的 11 位手机号');
+      onResult(null);
       return;
     }
     setLoading(true);

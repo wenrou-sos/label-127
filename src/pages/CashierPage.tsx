@@ -56,7 +56,12 @@ export default function CashierPage() {
 
   const handleResult = useCallback(
     async (m: Member | null) => {
-      if (!m) return;
+      if (!m) {
+        setCurrentMember(null);
+        setSummary(null);
+        setRecords([]);
+        return;
+      }
       setCurrentMember(m);
       setModalOpen(true);
       setCardLoading(true);

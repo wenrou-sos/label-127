@@ -13,7 +13,7 @@ import type {
   DailyReport,
   PaymentMethod,
 } from '../types';
-import { MEMBERS, CONSUMPTION_RECORDS, BALANCE_CHANGES, STORES, NOW, saveToStorage } from './data';
+import { MEMBERS, CONSUMPTION_RECORDS, BALANCE_CHANGES, STORES, NOW, saveToStorage, getCurrentStore } from './data';
 import { isSameDay, formatDate } from '../format';
 import { recordsToCsv } from '../csv';
 
@@ -212,13 +212,14 @@ export const mockService = {
     return delay({ ok: true }, 480);
   },
 
-  async getCashierStats(): Promise<CashierStats> {
-    const todayRecords = CONSUMPTION_RECORDS.filter((r) => isToday(r.date));
-    const todayRecharges = BALANCE_CHANGES.filter((r) => r.type === '充值' && isToday(r.date));
+  async getCashierStats(store?: string): Promise<CashierStats> {
+    const targetStore = store ?? getCurrentStore();
+    const todayRecords = CONSUMPTION_RECORDS.filter((r) => isToday(r.date) && r.store === targetStore);
+    const todayRecharges = BALANCE_CHANGES.filter((r) => r.type === '充值' && isToday(r.date) && r.store === targetStore);
     const todayRechargeTotal = todayRecharges.reduce((s, r) => s + r.amount, 0);
     const newMembersThisMonth = MEMBERS.filter((m) => {
       const d = new Date(m.registeredAt);
-      return d >= startOfMonth();
+      return d >= startOfMonth() && m.registeredStore === targetStore;
     }).length;
     const pendingAlerts = (await this.detectAllAnomalies()).filter((a) => a.status !== '已解除').length;
     return delay({
@@ -277,12 +278,13 @@ export const mockService = {
     return delay(result, 200);
   },
 
-  async recharge(memberId: string, amount: number, note: string, store: string = STORES[0]): Promise<RechargeResult> {
+  async recharge(memberId: string, amount: number, note: string, store?: string): Promise<RechargeResult> {
     const member = MEMBERS.find((m) => m.id === memberId);
     if (!member) return delay({ ok: false, error: '会员不存在' }, 400);
     if (!Number.isInteger(amount) || amount < 10 || amount > 10000) {
       return delay({ ok: false, error: '充值金额须为 10~10000 的正整数' }, 400);
     }
+    const targetStore = store ?? getCurrentStore();
     const prevBalance = member.balance;
     member.balance += amount;
     const change: BalanceChange = {
@@ -293,7 +295,7 @@ export const mockService = {
       amount,
       balanceAfter: member.balance,
       note: note || '收银台手动充值',
-      store,
+      store: targetStore,
     };
     BALANCE_CHANGES.unshift(change);
     saveToStorage();

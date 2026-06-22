@@ -26,6 +26,25 @@ export const STORES = [
   '净致干洗 · 黄浦外滩店',
 ];
 
+const STORE_STORAGE_KEY = 'jingzhi-current-store';
+
+export let currentStore: string = STORES[0];
+
+export function getCurrentStore(): string {
+  return currentStore;
+}
+
+export function setCurrentStore(store: string): void {
+  if (!STORES.includes(store)) return;
+  currentStore = store;
+  try {
+    localStorage.setItem(STORE_STORAGE_KEY, store);
+  } catch {
+    // ignore
+  }
+  notifyListeners();
+}
+
 const SEED_MEMBERS: Member[] = [
   {
     id: 'M001',
@@ -364,9 +383,21 @@ export function resetToSeed() {
 
 if (typeof window !== 'undefined') {
   loadFromStorage();
+  try {
+    const savedStore = localStorage.getItem(STORE_STORAGE_KEY);
+    if (savedStore && STORES.includes(savedStore)) {
+      currentStore = savedStore;
+    }
+  } catch {
+    // ignore
+  }
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEY) {
       loadFromStorage();
+      notifyListeners();
+    }
+    if (e.key === STORE_STORAGE_KEY && e.newValue && STORES.includes(e.newValue)) {
+      currentStore = e.newValue;
       notifyListeners();
     }
   });

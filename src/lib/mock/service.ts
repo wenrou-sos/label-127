@@ -9,6 +9,7 @@ import type {
   BalanceChange,
   AnomalyAlert,
   CashierStats,
+  RechargeResult,
 } from '../types';
 import { MEMBERS, CONSUMPTION_RECORDS, BALANCE_CHANGES, STORES, NOW } from './data';
 import { isSameDay, formatDate } from '../format';
@@ -211,6 +212,8 @@ export const mockService = {
 
   async getCashierStats(): Promise<CashierStats> {
     const todayRecords = CONSUMPTION_RECORDS.filter((r) => isToday(r.date));
+    const todayRecharges = BALANCE_CHANGES.filter((r) => r.type === '充值' && isToday(r.date));
+    const todayRechargeTotal = todayRecharges.reduce((s, r) => s + r.amount, 0);
     const newMembersThisMonth = MEMBERS.filter((m) => {
       const d = new Date(m.registeredAt);
       return d >= startOfMonth();
@@ -218,7 +221,8 @@ export const mockService = {
     const pendingAlerts = (await this.detectAllAnomalies()).filter((a) => a.status !== '已解除').length;
     return delay({
       todayCount: todayRecords.length,
-      todayRevenue: todayRecords.reduce((s, r) => s + r.total, 0),
+      todayRevenue: todayRecords.reduce((s, r) => s + r.total, 0) + todayRechargeTotal,
+      todayRecharge: todayRechargeTotal,
       newMembersThisMonth,
       pendingAlerts,
     });
@@ -269,6 +273,33 @@ export const mockService = {
     }
     const result = Array.from(byStore.entries()).map(([store, data]) => ({ store, ...data }));
     return delay(result, 200);
+  },
+
+  async recharge(memberId: string, amount: number, note: string): Promise<RechargeResult> {
+    const member = MEMBERS.find((m) => m.id === memberId);
+    if (!member) return delay({ ok: false, error: '会员不存在' }, 400);
+    if (!Number.isInteger(amount) || amount < 10 || amount > 10000) {
+      return delay({ ok: false, error: '充值金额须为 10~10000 的正整数' }, 400);
+    }
+    const prevBalance = member.balance;
+    member.balance += amount;
+    const change: BalanceChange = {
+      id: `B-RCHG-${Date.now()}`,
+      memberId,
+      date: new Date().toISOString(),
+      type: '充值',
+      amount,
+      balanceAfter: member.balance,
+      note: note || '收银台手动充值',
+    };
+    BALANCE_CHANGES.unshift(change);
+    return delay({
+      ok: true,
+      newBalance: member.balance,
+      prevBalance,
+      amount,
+      changeId: change.id,
+    }, 500);
   },
 };
 

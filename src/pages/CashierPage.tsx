@@ -8,6 +8,7 @@ import { MemberQueryBar } from '@/modules/cashier/MemberQueryBar';
 import { StatOverview } from '@/modules/cashier/StatOverview';
 import { TrendChart } from '@/modules/cashier/TrendChart';
 import { MemberCardModal } from '@/modules/cashier/MemberCardModal';
+import { RechargeModal } from '@/modules/cashier/RechargeModal';
 import { ConsumptionList } from '@/modules/cashier/ConsumptionList';
 import { AlertSidebar } from '@/modules/security/AlertSidebar';
 import { SmsVerifyModal } from '@/modules/security/SmsVerifyModal';
@@ -34,6 +35,7 @@ export default function CashierPage() {
 
   const [verifyAlert, setVerifyAlert] = useState<AnomalyAlert | null>(null);
   const [detailAlert, setDetailAlert] = useState<AnomalyAlert | null>(null);
+  const [rechargeOpen, setRechargeOpen] = useState(false);
 
   const refreshAlerts = useCallback(async () => {
     setAlertsLoading(true);
@@ -101,6 +103,37 @@ export default function CashierPage() {
     setDetailAlert(null);
     setTimeout(() => setVerifyAlert(alert), 200);
   }, []);
+
+  const handleOpenRecharge = useCallback(() => {
+    setModalOpen(false);
+    setTimeout(() => setRechargeOpen(true), 200);
+  }, []);
+
+  const handleRecharge = useCallback(
+    async (amount: number, note: string) => {
+      if (!currentMember) return;
+      const result = await mockService.recharge(currentMember.id, amount, note);
+      if (!result.ok) {
+        toast({ tone: 'error', title: '充值失败', desc: result.error ?? '未知错误' });
+        return;
+      }
+      setRechargeOpen(false);
+      const [sum, recs] = await Promise.all([
+        mockService.getMemberSummary(currentMember.id),
+        mockService.getConsumptionRecords(currentMember.id),
+      ]);
+      setSummary(sum);
+      setRecords(recs);
+      setCurrentMember((prev) => (prev ? { ...prev, balance: result.newBalance! } : prev));
+      refreshStats();
+      toast({
+        tone: 'success',
+        title: '充值成功',
+        desc: `已充值 ¥${amount}，余额 ¥${result.newBalance!.toFixed(2)}`,
+      });
+    },
+    [currentMember, refreshStats, toast],
+  );
 
   return (
     <div className="relative min-h-screen lg:flex">
@@ -172,7 +205,17 @@ export default function CashierPage() {
         summary={summary}
         loading={cardLoading}
         onViewRecords={handleViewRecords}
+        onRecharge={handleOpenRecharge}
       />
+      {summary && (
+        <RechargeModal
+          open={rechargeOpen}
+          onClose={() => setRechargeOpen(false)}
+          memberName={summary.name}
+          currentBalance={summary.balance}
+          onConfirm={handleRecharge}
+        />
+      )}
       <SmsVerifyModal
         open={!!verifyAlert}
         alert={verifyAlert}

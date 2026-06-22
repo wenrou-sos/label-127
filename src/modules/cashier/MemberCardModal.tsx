@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Coins, Package, Sparkles, ListChecks } from 'lucide-react';
+import { Wallet, TrendingUp, Coins, Package, Sparkles, ListChecks, PlusCircle } from 'lucide-react';
 import { Modal, Button, LevelBadge, Progress, Skeleton } from '@/components/ui';
 import { Avatar } from '@/components/layout/Avatar';
 import { formatCurrency, maskPhone, formatDate } from '@/lib/format';
@@ -33,12 +33,14 @@ export function MemberCardModal({
   summary,
   loading,
   onViewRecords,
+  onRecharge,
 }: {
   open: boolean;
   onClose: () => void;
   summary: MemberSummary | null;
   loading: boolean;
   onViewRecords: () => void;
+  onRecharge: () => void;
 }) {
   const upgrade = summary?.levelUpgrade;
   const upgradeText =
@@ -58,6 +60,10 @@ export function MemberCardModal({
         <>
           <Button variant="secondary" onClick={onClose}>
             关闭
+          </Button>
+          <Button variant="gold" onClick={onRecharge}>
+            <PlusCircle className="h-4 w-4" />
+            充值
           </Button>
           <Button onClick={onViewRecords}>
             <ListChecks className="h-4 w-4" />

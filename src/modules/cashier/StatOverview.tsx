@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Receipt, Wallet, UserPlus, ShieldAlert } from 'lucide-react';
+import { Receipt, Wallet, UserPlus, ShieldAlert, PlusCircle } from 'lucide-react';
 import { Card, Skeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/lib/format';
@@ -8,7 +8,7 @@ import type { CashierStats } from '@/lib/types';
 const cards = [
   { key: 'todayCount', label: '今日消费笔数', icon: Receipt, tone: 'text-forest-600 bg-forest-50', format: (s: CashierStats) => formatNumber(s.todayCount) + ' 笔' },
   { key: 'todayRevenue', label: '今日营业额', icon: Wallet, tone: 'text-gold-600 bg-gold-50', format: (s: CashierStats) => formatCurrency(s.todayRevenue) },
-  { key: 'newMembersThisMonth', label: '本月新增会员', icon: UserPlus, tone: 'text-forest-600 bg-forest-50', format: (s: CashierStats) => formatNumber(s.newMembersThisMonth) + ' 人' },
+  { key: 'todayRecharge', label: '今日充值', icon: PlusCircle, tone: 'text-gold-600 bg-gold-50', format: (s: CashierStats) => formatCurrency(s.todayRecharge) },
   { key: 'pendingAlerts', label: '待处理预警', icon: ShieldAlert, tone: 'text-brick-600 bg-brick-50', format: (s: CashierStats) => formatNumber(s.pendingAlerts) + ' 条' },
 ] as const;
 

@@ -86,6 +86,16 @@ export interface AnomalyAlert {
 export interface CashierStats {
   todayCount: number;
   todayRevenue: number;
+  todayRecharge: number;
   newMembersThisMonth: number;
   pendingAlerts: number;
+}
+
+export interface RechargeResult {
+  ok: boolean;
+  error?: string;
+  newBalance?: number;
+  prevBalance?: number;
+  amount?: number;
+  changeId?: string;
 }

@@ -10,6 +10,8 @@ import type {
   AnomalyAlert,
   CashierStats,
   RechargeResult,
+  DailyReport,
+  PaymentMethod,
 } from '../types';
 import { MEMBERS, CONSUMPTION_RECORDS, BALANCE_CHANGES, STORES, NOW, saveToStorage } from './data';
 import { isSameDay, formatDate } from '../format';
@@ -301,6 +303,86 @@ export const mockService = {
       amount,
       changeId: change.id,
     }, 500);
+  },
+
+  async getDailyReport(store?: string): Promise<DailyReport> {
+    const targetStore = store ?? STORES[0];
+    const todayRecords = CONSUMPTION_RECORDS.filter((r) => isToday(r.date) && r.store === targetStore);
+    const todayRecharges = BALANCE_CHANGES.filter((r) => r.type === '充值' && isToday(r.date));
+    const todayNewMembers = MEMBERS.filter((m) => isToday(m.registeredAt));
+
+    const orderCount = todayRecords.length;
+    const totalRevenue = todayRecords.reduce((s, r) => s + r.total, 0);
+
+    const cashTopup = todayRecords
+      .filter((r) => r.paymentMethod === '现金补差')
+      .reduce((s, r) => s + r.deductedAmount, 0);
+
+    const storedValueSpent = todayRecords
+      .filter((r) => r.paymentMethod === '储值扣款')
+      .reduce((s, r) => s + r.deductedAmount, 0);
+
+    const packageUsageCount = todayRecords
+      .filter((r) => r.paymentMethod === '套餐扣次')
+      .reduce((s, r) => s + r.items.reduce((qs, it) => qs + it.qty, 0), 0);
+
+    const rechargeAmount = todayRecharges.reduce((s, r) => s + r.amount, 0);
+    const newMemberCount = todayNewMembers.length;
+
+    const paymentMethods: PaymentMethod[] = ['储值扣款', '现金补差', '套餐扣次'];
+    const paymentBreakdown = paymentMethods.map((method) => {
+      const records = todayRecords.filter((r) => r.paymentMethod === method);
+      return {
+        method,
+        count: records.length,
+        amount: records.reduce((s, r) => s + (method === '套餐扣次' ? 0 : r.deductedAmount), 0),
+      };
+    });
+
+    const serviceMap = new Map<string, { qty: number; revenue: number }>();
+    for (const r of todayRecords) {
+      for (const item of r.items) {
+        const existing = serviceMap.get(item.name) ?? { qty: 0, revenue: 0 };
+        existing.qty += item.qty;
+        existing.revenue += item.qty * item.price;
+        serviceMap.set(item.name, existing);
+      }
+    }
+    const topServices = Array.from(serviceMap.entries())
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 8);
+
+    const recentOrders = [...todayRecords]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 15)
+      .map((r) => {
+        const member = MEMBERS.find((m) => m.id === r.memberId);
+        const d = new Date(r.date);
+        return {
+          id: r.id,
+          memberName: member?.name ?? '未知会员',
+          items: r.items.map((it) => `${it.name}×${it.qty}`).join('、'),
+          paymentMethod: r.paymentMethod,
+          amount: r.paymentMethod === '套餐扣次' ? 0 : r.deductedAmount,
+          time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+        };
+      });
+
+    return delay({
+      date: new Date().toISOString(),
+      store: targetStore,
+      orderCount,
+      totalRevenue,
+      cashTopup,
+      storedValueSpent,
+      packageUsageCount,
+      rechargeAmount,
+      newMemberCount,
+      paymentBreakdown,
+      topServices,
+      recentOrders,
+    }, 260);
   },
 };
 

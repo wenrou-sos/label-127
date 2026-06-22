@@ -1,15 +1,17 @@
-import { Link } from 'react-router-dom';
-import { LayoutDashboard, ShieldAlert, ArrowRightLeft, UserRound } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, ShieldAlert, ArrowRightLeft, UserRound, FileText } from 'lucide-react';
 import { BrandMark } from './BrandMark';
 import { RoleSwitcher } from './RoleSwitcher';
 import { cn } from '@/lib/utils';
 
 const NAV = [
-  { href: '#workbench', label: '工作台', icon: LayoutDashboard },
-  { href: '#alerts', label: '预警中心', icon: ShieldAlert },
+  { href: '/cashier', label: '工作台', icon: LayoutDashboard },
+  { href: '/cashier/report', label: '日报表', icon: FileText },
+  { href: '/cashier#alerts', label: '预警中心', icon: ShieldAlert },
 ];
 
 export function CashierSidebar() {
+  const location = useLocation();
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-forest-800 text-cream-50 lg:flex">
       <div className="border-b border-forest-700/60 px-5 py-5">
@@ -19,18 +21,24 @@ export function CashierSidebar() {
         <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-cream-100/40">
           收银工作台
         </p>
-        {NAV.map((n) => (
-          <a
-            key={n.href}
-            href={n.href}
-            className={cn(
-              'group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-cream-100/80 transition hover:bg-forest-700 hover:text-cream-50',
-            )}
-          >
-            <n.icon className="h-4 w-4" />
-            {n.label}
-          </a>
-        ))}
+        {NAV.map((n) => {
+          const isActive = location.pathname === n.href;
+          return (
+            <Link
+              key={n.href}
+              to={n.href}
+              className={cn(
+                'group flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition',
+                isActive
+                  ? 'bg-forest-700 text-cream-50'
+                  : 'text-cream-100/80 hover:bg-forest-700 hover:text-cream-50',
+              )}
+            >
+              <n.icon className="h-4 w-4" />
+              {n.label}
+            </Link>
+          );
+        })}
       </nav>
       <div className="space-y-3 border-t border-forest-700/60 px-4 py-4">
         <div className="flex items-center gap-2.5 rounded-xl bg-forest-900/40 px-3 py-2.5">

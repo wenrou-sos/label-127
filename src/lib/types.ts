@@ -99,3 +99,37 @@ export interface RechargeResult {
   amount?: number;
   changeId?: string;
 }
+
+export interface PaymentBreakdown {
+  method: PaymentMethod;
+  count: number;
+  amount: number;
+}
+
+export interface ServiceItemStat {
+  name: string;
+  qty: number;
+  revenue: number;
+}
+
+export interface DailyReport {
+  date: string;
+  store: string;
+  orderCount: number;
+  totalRevenue: number;
+  cashTopup: number;
+  storedValueSpent: number;
+  packageUsageCount: number;
+  rechargeAmount: number;
+  newMemberCount: number;
+  paymentBreakdown: PaymentBreakdown[];
+  topServices: ServiceItemStat[];
+  recentOrders: Array<{
+    id: string;
+    memberName: string;
+    items: string;
+    paymentMethod: PaymentMethod;
+    amount: number;
+    time: string;
+  }>;
+}

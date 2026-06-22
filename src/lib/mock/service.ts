@@ -277,7 +277,7 @@ export const mockService = {
     return delay(result, 200);
   },
 
-  async recharge(memberId: string, amount: number, note: string): Promise<RechargeResult> {
+  async recharge(memberId: string, amount: number, note: string, store: string = STORES[0]): Promise<RechargeResult> {
     const member = MEMBERS.find((m) => m.id === memberId);
     if (!member) return delay({ ok: false, error: '会员不存在' }, 400);
     if (!Number.isInteger(amount) || amount < 10 || amount > 10000) {
@@ -293,6 +293,7 @@ export const mockService = {
       amount,
       balanceAfter: member.balance,
       note: note || '收银台手动充值',
+      store,
     };
     BALANCE_CHANGES.unshift(change);
     saveToStorage();
@@ -308,19 +309,29 @@ export const mockService = {
   async getDailyReport(store?: string): Promise<DailyReport> {
     const targetStore = store ?? STORES[0];
     const todayRecords = CONSUMPTION_RECORDS.filter((r) => isToday(r.date) && r.store === targetStore);
-    const todayRecharges = BALANCE_CHANGES.filter((r) => r.type === '充值' && isToday(r.date));
-    const todayNewMembers = MEMBERS.filter((m) => isToday(m.registeredAt));
+    const todayRecharges = BALANCE_CHANGES.filter((r) => r.type === '充值' && isToday(r.date) && r.store === targetStore);
+    const todayNewMembers = MEMBERS.filter((m) => isToday(m.registeredAt) && m.registeredStore === targetStore);
 
     const orderCount = todayRecords.length;
-    const totalRevenue = todayRecords.reduce((s, r) => s + r.total, 0);
 
-    const cashTopup = todayRecords
-      .filter((r) => r.paymentMethod === '现金补差')
-      .reduce((s, r) => s + r.deductedAmount, 0);
+    let storedValueSpent = 0;
+    let cashTopup = 0;
+    let storedValuePaymentCount = 0;
+    let cashPaymentCount = 0;
+    let totalRevenue = 0;
 
-    const storedValueSpent = todayRecords
-      .filter((r) => r.paymentMethod === '储值扣款')
-      .reduce((s, r) => s + r.deductedAmount, 0);
+    for (const r of todayRecords) {
+      if (r.paymentMethod === '套餐扣次') continue;
+      totalRevenue += r.total;
+      if (r.paymentMethod === '储值扣款') {
+        storedValueSpent += r.deductedAmount;
+        storedValuePaymentCount++;
+      } else if (r.paymentMethod === '现金补差') {
+        storedValueSpent += r.total - r.deductedAmount;
+        cashTopup += r.deductedAmount;
+        cashPaymentCount++;
+      }
+    }
 
     const packageUsageCount = todayRecords
       .filter((r) => r.paymentMethod === '套餐扣次')
@@ -329,15 +340,23 @@ export const mockService = {
     const rechargeAmount = todayRecharges.reduce((s, r) => s + r.amount, 0);
     const newMemberCount = todayNewMembers.length;
 
-    const paymentMethods: PaymentMethod[] = ['储值扣款', '现金补差', '套餐扣次'];
-    const paymentBreakdown = paymentMethods.map((method) => {
-      const records = todayRecords.filter((r) => r.paymentMethod === method);
-      return {
-        method,
-        count: records.length,
-        amount: records.reduce((s, r) => s + (method === '套餐扣次' ? 0 : r.deductedAmount), 0),
-      };
-    });
+    const paymentBreakdown = [
+      {
+        method: '储值扣款' as PaymentMethod,
+        count: storedValuePaymentCount,
+        amount: storedValueSpent,
+      },
+      {
+        method: '现金补差' as PaymentMethod,
+        count: cashPaymentCount,
+        amount: cashTopup,
+      },
+      {
+        method: '套餐扣次' as PaymentMethod,
+        count: todayRecords.filter((r) => r.paymentMethod === '套餐扣次').length,
+        amount: 0,
+      },
+    ];
 
     const serviceMap = new Map<string, { qty: number; revenue: number }>();
     for (const r of todayRecords) {

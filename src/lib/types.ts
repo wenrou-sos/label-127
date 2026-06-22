@@ -33,6 +33,7 @@ export interface Member {
   packages: MemberPackage[];
   avatarSeed: string;
   registeredAt: string;
+  registeredStore: string;
   upgradeThreshold: number;
 }
 
@@ -67,6 +68,7 @@ export interface BalanceChange {
   amount: number;
   balanceAfter: number;
   note: string;
+  store: string;
 }
 
 export interface AnomalyAlert {

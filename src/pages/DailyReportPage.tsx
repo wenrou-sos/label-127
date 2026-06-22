@@ -19,7 +19,7 @@ import { CashierSidebar } from '@/components/layout/CashierSidebar';
 import { BrandMark } from '@/components/layout/BrandMark';
 import { Card, CardHeader, CardBody, PaymentBadge, Skeleton } from '@/components/ui';
 import { mockService } from '@/lib/mock/service';
-import { subscribeToDataChanges } from '@/lib/mock/data';
+import { subscribeToDataChanges, STORES } from '@/lib/mock/data';
 import { formatCurrency, formatNumber, formatDate } from '@/lib/format';
 import type { DailyReport } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -72,6 +72,7 @@ const statCards = [
 export default function DailyReportPage() {
   const [report, setReport] = useState<DailyReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [store, setStore] = useState(STORES[0]);
   const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
@@ -83,10 +84,10 @@ export default function DailyReportPage() {
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
-    const r = await mockService.getDailyReport();
+    const r = await mockService.getDailyReport(store);
     setReport(r);
     setLoading(false);
-  }, []);
+  }, [store]);
 
   useEffect(() => {
     fetchReport();
@@ -140,12 +141,21 @@ export default function DailyReportPage() {
               </span>
               <div>
                 <h2 className="font-serif text-lg font-semibold text-ink-800">收银员交班汇总</h2>
-                {report && (
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-400">
-                    <Store className="h-3.5 w-3.5" />
-                    {report.store}
-                  </p>
-                )}
+                <label className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-400">
+                  <Store className="h-3.5 w-3.5 shrink-0" />
+                  <select
+                    value={store}
+                    onChange={(e) => setStore(e.target.value)}
+                    disabled={loading}
+                    className="max-w-[14rem] cursor-pointer truncate rounded-md border border-forest-200 bg-white/80 px-2 py-1 text-xs font-medium text-ink-600 transition hover:border-forest-300 focus:outline-none focus:ring-2 focus:ring-forest-400 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {STORES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-gold-200 bg-gold-50 px-4 py-2.5">

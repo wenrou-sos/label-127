@@ -10,7 +10,7 @@ import type {
 export const NOW = new Date();
 
 const STORAGE_KEY = 'jingzhi-mock-data';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 function iso(daysAgo: number, hour = 10, min = 0): string {
   const d = new Date(NOW);
@@ -40,6 +40,7 @@ const SEED_MEMBERS: Member[] = [
     ],
     avatarSeed: 'lin',
     registeredAt: iso(820, 14),
+    registeredStore: STORES[0],
     upgradeThreshold: 3000,
   },
   {
@@ -52,6 +53,7 @@ const SEED_MEMBERS: Member[] = [
     packages: [{ name: '衬衫水洗月卡', remaining: 12, total: 20 }],
     avatarSeed: 'zhou',
     registeredAt: iso(540, 11),
+    registeredStore: STORES[2],
     upgradeThreshold: 1500,
   },
   {
@@ -64,6 +66,7 @@ const SEED_MEMBERS: Member[] = [
     packages: [],
     avatarSeed: 'wang',
     registeredAt: iso(95, 15),
+    registeredStore: STORES[3],
     upgradeThreshold: 500,
   },
   {
@@ -79,6 +82,7 @@ const SEED_MEMBERS: Member[] = [
     ],
     avatarSeed: 'zhao',
     registeredAt: iso(1200, 9),
+    registeredStore: STORES[0],
     upgradeThreshold: 0,
   },
   {
@@ -91,6 +95,7 @@ const SEED_MEMBERS: Member[] = [
     packages: [{ name: '西装精护套餐', remaining: 6, total: 10 }],
     avatarSeed: 'sun',
     registeredAt: iso(700, 16),
+    registeredStore: STORES[0],
     upgradeThreshold: 3000,
   },
   {
@@ -103,7 +108,21 @@ const SEED_MEMBERS: Member[] = [
     packages: [{ name: '床品护理套餐', remaining: 1, total: 4 }],
     avatarSeed: 'wu',
     registeredAt: iso(410, 13),
+    registeredStore: STORES[3],
     upgradeThreshold: 1500,
+  },
+  {
+    id: 'M007',
+    name: '陈思远',
+    phone: '13300006666',
+    cardNo: 'VC20240007',
+    level: '普通',
+    balance: 500.0,
+    packages: [],
+    avatarSeed: 'chen',
+    registeredAt: iso(0, 9, 30),
+    registeredStore: STORES[1],
+    upgradeThreshold: 500,
   },
 ];
 
@@ -250,25 +269,27 @@ const SEED_CONSUMPTION_RECORDS: ConsumptionRecord[] = [
 
 const SEED_BALANCE_CHANGES: BalanceChange[] = [
   // M001
-  { id: 'B001', memberId: 'M001', date: iso(0, 9, 12), type: '消费', amount: -225, balanceAfter: 1560.0, note: '羽绒服+大衣干洗（静安旗舰店）' },
-  { id: 'B002', memberId: 'M001', date: iso(0, 17, 6), type: '消费', amount: -450, balanceAfter: 1560.0, note: '窗帘清洗×3' },
-  { id: 'B003', memberId: 'M001', date: iso(2, 11, 21), type: '消费', amount: -140, balanceAfter: 2085.0, note: '西装+衬衫干洗' },
-  { id: 'B004', memberId: 'M001', date: iso(5, 10, 0), type: '充值', amount: 1000, balanceAfter: 2225.0, note: '充值赠送 100 元（满 1000 送 100）' },
-  { id: 'B005', memberId: 'M001', date: iso(9, 10, 31), type: '消费', amount: -145, balanceAfter: 1225.0, note: '大衣+羽绒服干洗' },
-  { id: 'B006', memberId: 'M001', date: iso(12, 16, 11), type: '消费', amount: -380, balanceAfter: 1370.0, note: '婚纱礼服护理' },
-  { id: 'B007', memberId: 'M001', date: iso(20, 9, 0), type: '退款', amount: 65, balanceAfter: 1750.0, note: '大衣干洗质量瑕疵退款' },
-  { id: 'B008', memberId: 'M001', date: iso(45, 8, 30), type: '过期', amount: -200, balanceAfter: 1450.0, note: '上季度赠送余额过期清零' },
+  { id: 'B001', memberId: 'M001', date: iso(0, 9, 12), type: '消费', amount: -225, balanceAfter: 1560.0, note: '羽绒服+大衣干洗（静安旗舰店）', store: STORES[0] },
+  { id: 'B002', memberId: 'M001', date: iso(0, 17, 6), type: '消费', amount: -450, balanceAfter: 1560.0, note: '窗帘清洗×3', store: STORES[0] },
+  { id: 'B003', memberId: 'M001', date: iso(2, 11, 21), type: '消费', amount: -140, balanceAfter: 2085.0, note: '西装+衬衫干洗', store: STORES[1] },
+  { id: 'B004', memberId: 'M001', date: iso(5, 10, 0), type: '充值', amount: 1000, balanceAfter: 2225.0, note: '充值赠送 100 元（满 1000 送 100）', store: STORES[0] },
+  { id: 'B005', memberId: 'M001', date: iso(9, 10, 31), type: '消费', amount: -145, balanceAfter: 1225.0, note: '大衣+羽绒服干洗', store: STORES[2] },
+  { id: 'B006', memberId: 'M001', date: iso(12, 16, 11), type: '消费', amount: -380, balanceAfter: 1370.0, note: '婚纱礼服护理', store: STORES[0] },
+  { id: 'B007', memberId: 'M001', date: iso(20, 9, 0), type: '退款', amount: 65, balanceAfter: 1750.0, note: '大衣干洗质量瑕疵退款', store: STORES[0] },
+  { id: 'B008', memberId: 'M001', date: iso(45, 8, 30), type: '过期', amount: -200, balanceAfter: 1450.0, note: '上季度赠送余额过期清零', store: STORES[0] },
   // M002
-  { id: 'B009', memberId: 'M002', date: iso(0, 10, 31), type: '消费', amount: -1680, balanceAfter: 820.5, note: '高档皮衣护理×3' },
-  { id: 'B010', memberId: 'M002', date: iso(7, 14, 0), type: '充值', amount: 2000, balanceAfter: 2500.5, note: '银卡升级充值' },
-  { id: 'B011', memberId: 'M002', date: iso(30, 16, 41), type: '消费', amount: -65, balanceAfter: 500.5, note: '大衣干洗' },
+  { id: 'B009', memberId: 'M002', date: iso(0, 10, 31), type: '消费', amount: -1680, balanceAfter: 820.5, note: '高档皮衣护理×3', store: STORES[2] },
+  { id: 'B010', memberId: 'M002', date: iso(7, 14, 0), type: '充值', amount: 2000, balanceAfter: 2500.5, note: '银卡升级充值', store: STORES[2] },
+  { id: 'B011', memberId: 'M002', date: iso(30, 16, 41), type: '消费', amount: -65, balanceAfter: 500.5, note: '大衣干洗', store: STORES[0] },
   // M003
-  { id: 'B012', memberId: 'M003', date: iso(8, 10, 16), type: '消费', amount: -65, balanceAfter: 120.0, note: '大衣干洗' },
-  { id: 'B013', memberId: 'M003', date: iso(15, 9, 0), type: '充值', amount: 300, balanceAfter: 185.0, note: '新会员首充 300' },
+  { id: 'B012', memberId: 'M003', date: iso(8, 10, 16), type: '消费', amount: -65, balanceAfter: 120.0, note: '大衣干洗', store: STORES[3] },
+  { id: 'B013', memberId: 'M003', date: iso(15, 9, 0), type: '充值', amount: 300, balanceAfter: 185.0, note: '新会员首充 300', store: STORES[3] },
   // M004
-  { id: 'B014', memberId: 'M004', date: iso(0, 11, 6), type: '消费', amount: -320, balanceAfter: 6480.0, note: '高端皮具养护' },
-  { id: 'B015', memberId: 'M004', date: iso(4, 13, 0), type: '充值', amount: 5000, balanceAfter: 6800.0, note: '钻石会员续费充值' },
-  { id: 'B016', memberId: 'M004', date: iso(60, 8, 0), type: '过期', amount: -500, balanceAfter: 1800.0, note: '年度赠送余额过期' },
+  { id: 'B014', memberId: 'M004', date: iso(0, 11, 6), type: '消费', amount: -320, balanceAfter: 6480.0, note: '高端皮具养护', store: STORES[0] },
+  { id: 'B015', memberId: 'M004', date: iso(4, 13, 0), type: '充值', amount: 5000, balanceAfter: 6800.0, note: '钻石会员续费充值', store: STORES[0] },
+  { id: 'B016', memberId: 'M004', date: iso(60, 8, 0), type: '过期', amount: -500, balanceAfter: 1800.0, note: '年度赠送余额过期', store: STORES[0] },
+  // M007（今日徐汇宛平店新会员首充，用于校验门店隔离）
+  { id: 'B017', memberId: 'M007', date: iso(0, 9, 35), type: '充值', amount: 500, balanceAfter: 500.0, note: '新会员首充 500', store: STORES[1] },
 ];
 
 export let MEMBERS: Member[] = [];

@@ -15,6 +15,7 @@ import { SmsVerifyModal } from '@/modules/security/SmsVerifyModal';
 import { AlertDetailModal } from '@/modules/security/AlertDetailModal';
 import { useToast } from '@/components/ui';
 import { mockService } from '@/lib/mock/service';
+import { subscribeToDataChanges } from '@/lib/mock/data';
 import { formatDate } from '@/lib/format';
 import type { Member, MemberSummary, ConsumptionRecord, AnomalyAlert, CashierStats } from '@/lib/types';
 
@@ -36,6 +37,14 @@ export default function CashierPage() {
   const [verifyAlert, setVerifyAlert] = useState<AnomalyAlert | null>(null);
   const [detailAlert, setDetailAlert] = useState<AnomalyAlert | null>(null);
   const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToDataChanges(() => {
+      setRefreshTick((t) => t + 1);
+    });
+    return unsubscribe;
+  }, []);
 
   const refreshAlerts = useCallback(async () => {
     setAlertsLoading(true);
@@ -54,7 +63,7 @@ export default function CashierPage() {
   useEffect(() => {
     refreshStats();
     refreshAlerts();
-  }, [refreshStats, refreshAlerts]);
+  }, [refreshStats, refreshAlerts, refreshTick]);
 
   const handleResult = useCallback(
     async (m: Member | null) => {

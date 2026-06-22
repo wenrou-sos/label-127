@@ -12,6 +12,7 @@ import { Tabs, Button, useToast } from '@/components/ui';
 import type { TabItem } from '@/components/ui';
 import { useAuthStore } from '@/lib/auth';
 import { mockService } from '@/lib/mock/service';
+import { subscribeToDataChanges } from '@/lib/mock/data';
 import { recordsToCsv, downloadCsv } from '@/lib/csv';
 import { formatDate } from '@/lib/format';
 import type { MemberSummary, ConsumptionRecord, BalanceChange } from '@/lib/types';
@@ -25,6 +26,7 @@ const TABS: TabItem[] = [
 export default function MemberPage() {
   const member = useAuthStore((s) => s.member);
   const logout = useAuthStore((s) => s.logout);
+  const updateMember = useAuthStore((s) => s.updateMember);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,8 +41,16 @@ export default function MemberPage() {
   const [changes, setChanges] = useState<BalanceChange[]>([]);
   const [changesLoading, setChangesLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const memberId = member?.id;
+
+  useEffect(() => {
+    const unsubscribe = subscribeToDataChanges(() => {
+      setRefreshTick((t) => t + 1);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!memberId) return;
@@ -48,8 +58,15 @@ export default function MemberPage() {
     mockService.getMemberSummary(memberId).then((s) => {
       setSummary(s);
       setSummaryLoading(false);
+      if (s) {
+        updateMember({
+          balance: s.balance,
+          level: s.level,
+          packages: s.packages,
+        });
+      }
     });
-  }, [memberId]);
+  }, [memberId, updateMember, refreshTick]);
 
   useEffect(() => {
     if (!memberId) return;
@@ -64,7 +81,7 @@ export default function MemberPage() {
       setRecordsLoading(false);
       setChangesLoading(false);
     });
-  }, [memberId, range]);
+  }, [memberId, range, refreshTick]);
 
   const handleQuick = useCallback((k: QuickKey | null) => {
     if (!k) {

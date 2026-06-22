@@ -9,6 +9,7 @@ interface AuthState {
   token: string | null;
   login: (member: Member, token: string) => void;
   logout: () => void;
+  updateMember: (partial: Partial<Member>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -18,6 +19,10 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       login: (member, token) => set({ member, token }),
       logout: () => set({ member: null, token: null }),
+      updateMember: (partial) =>
+        set((state) =>
+          state.member ? { member: { ...state.member, ...partial } } : state,
+        ),
     }),
     { name: 'jingzhi-member-auth' },
   ),

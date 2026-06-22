@@ -11,7 +11,7 @@ import type {
   CashierStats,
   RechargeResult,
 } from '../types';
-import { MEMBERS, CONSUMPTION_RECORDS, BALANCE_CHANGES, STORES, NOW } from './data';
+import { MEMBERS, CONSUMPTION_RECORDS, BALANCE_CHANGES, STORES, NOW, saveToStorage } from './data';
 import { isSameDay, formatDate } from '../format';
 import { recordsToCsv } from '../csv';
 
@@ -293,6 +293,7 @@ export const mockService = {
       note: note || '收银台手动充值',
     };
     BALANCE_CHANGES.unshift(change);
+    saveToStorage();
     return delay({
       ok: true,
       newBalance: member.balance,

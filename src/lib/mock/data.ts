@@ -1,4 +1,5 @@
 // Mock 数据：会员、消费记录、余额变动。日期相对「今天」动态生成，保证本月累计与日期筛选真实可用。
+// 支持 localStorage 持久化，确保充值等操作在刷新后仍然有效。
 
 import type {
   Member,
@@ -7,6 +8,9 @@ import type {
 } from '../types';
 
 export const NOW = new Date();
+
+const STORAGE_KEY = 'jingzhi-mock-data';
+const STORAGE_VERSION = 1;
 
 function iso(daysAgo: number, hour = 10, min = 0): string {
   const d = new Date(NOW);
@@ -22,7 +26,7 @@ export const STORES = [
   '净致干洗 · 黄浦外滩店',
 ];
 
-export const MEMBERS: Member[] = [
+const SEED_MEMBERS: Member[] = [
   {
     id: 'M001',
     name: '林婉清',
@@ -103,7 +107,7 @@ export const MEMBERS: Member[] = [
   },
 ];
 
-export const CONSUMPTION_RECORDS: ConsumptionRecord[] = [
+const SEED_CONSUMPTION_RECORDS: ConsumptionRecord[] = [
   // ===== M001 林婉清：今日 3 笔高频消费（触发规则 A，高风险） =====
   {
     id: 'C001', memberId: 'M001', date: iso(0, 9, 12), store: STORES[0],
@@ -244,7 +248,7 @@ export const CONSUMPTION_RECORDS: ConsumptionRecord[] = [
   },
 ];
 
-export const BALANCE_CHANGES: BalanceChange[] = [
+const SEED_BALANCE_CHANGES: BalanceChange[] = [
   // M001
   { id: 'B001', memberId: 'M001', date: iso(0, 9, 12), type: '消费', amount: -225, balanceAfter: 1560.0, note: '羽绒服+大衣干洗（静安旗舰店）' },
   { id: 'B002', memberId: 'M001', date: iso(0, 17, 6), type: '消费', amount: -450, balanceAfter: 1560.0, note: '窗帘清洗×3' },
@@ -266,3 +270,83 @@ export const BALANCE_CHANGES: BalanceChange[] = [
   { id: 'B015', memberId: 'M004', date: iso(4, 13, 0), type: '充值', amount: 5000, balanceAfter: 6800.0, note: '钻石会员续费充值' },
   { id: 'B016', memberId: 'M004', date: iso(60, 8, 0), type: '过期', amount: -500, balanceAfter: 1800.0, note: '年度赠送余额过期' },
 ];
+
+export let MEMBERS: Member[] = [];
+export let CONSUMPTION_RECORDS: ConsumptionRecord[] = [];
+export let BALANCE_CHANGES: BalanceChange[] = [];
+
+type StorageData = {
+  version: number;
+  members: Member[];
+  consumptionRecords: ConsumptionRecord[];
+  balanceChanges: BalanceChange[];
+};
+
+type ChangeListener = () => void;
+const listeners = new Set<ChangeListener>();
+
+export function subscribeToDataChanges(listener: ChangeListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notifyListeners() {
+  listeners.forEach((fn) => {
+    try { fn(); } catch { /* ignore */ }
+  });
+}
+
+export function saveToStorage() {
+  try {
+    const data: StorageData = {
+      version: STORAGE_VERSION,
+      members: MEMBERS,
+      consumptionRecords: CONSUMPTION_RECORDS,
+      balanceChanges: BALANCE_CHANGES,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+export function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw) as StorageData;
+      if (data.version === STORAGE_VERSION) {
+        MEMBERS = data.members;
+        CONSUMPTION_RECORDS = data.consumptionRecords;
+        BALANCE_CHANGES = data.balanceChanges;
+        return true;
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+  MEMBERS = JSON.parse(JSON.stringify(SEED_MEMBERS));
+  CONSUMPTION_RECORDS = JSON.parse(JSON.stringify(SEED_CONSUMPTION_RECORDS));
+  BALANCE_CHANGES = JSON.parse(JSON.stringify(SEED_BALANCE_CHANGES));
+  return false;
+}
+
+export function resetToSeed() {
+  MEMBERS = JSON.parse(JSON.stringify(SEED_MEMBERS));
+  CONSUMPTION_RECORDS = JSON.parse(JSON.stringify(SEED_CONSUMPTION_RECORDS));
+  BALANCE_CHANGES = JSON.parse(JSON.stringify(SEED_BALANCE_CHANGES));
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch { /* ignore */ }
+  notifyListeners();
+}
+
+if (typeof window !== 'undefined') {
+  loadFromStorage();
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) {
+      loadFromStorage();
+      notifyListeners();
+    }
+  });
+}

@@ -26,9 +26,25 @@ export function RechargeModal({
   const [error, setError] = useState<string | null>(null);
 
   function handleAmountChange(val: string) {
+    setAmountStr(val);
+    if (val === '') {
+      setError(null);
+      return;
+    }
+    if (!/^\d+$/.test(val)) {
+      setError('充值金额仅支持正整数，不支持小数或特殊字符');
+      return;
+    }
+    const n = parseInt(val, 10);
+    if (n < MIN_AMOUNT) {
+      setError(`最低充值金额为 ${MIN_AMOUNT} 元`);
+      return;
+    }
+    if (n > MAX_AMOUNT) {
+      setError(`单次充值不超过 ${MAX_AMOUNT} 元`);
+      return;
+    }
     setError(null);
-    const cleaned = val.replace(/[^\d]/g, '');
-    setAmountStr(cleaned);
   }
 
   function selectQuick(n: number) {
@@ -41,11 +57,11 @@ export function RechargeModal({
       setError('请输入充值金额');
       return null;
     }
-    const n = parseInt(amountStr, 10);
-    if (isNaN(n) || n !== parseFloat(amountStr)) {
-      setError('充值金额必须为正整数');
+    if (!/^\d+$/.test(amountStr)) {
+      setError('充值金额仅支持正整数，不支持小数或特殊字符');
       return null;
     }
+    const n = parseInt(amountStr, 10);
     if (n < MIN_AMOUNT) {
       setError(`最低充值金额为 ${MIN_AMOUNT} 元`);
       return null;
@@ -76,8 +92,9 @@ export function RechargeModal({
     onClose();
   }
 
-  const amount = amountStr ? parseInt(amountStr, 10) : 0;
-  const previewBalance = !isNaN(amount) && amount >= MIN_AMOUNT ? currentBalance + amount : null;
+  const amountValid = /^\d+$/.test(amountStr);
+  const amount = amountValid ? parseInt(amountStr, 10) : 0;
+  const previewBalance = amountValid && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT ? currentBalance + amount : null;
 
   return (
     <Modal
@@ -92,7 +109,7 @@ export function RechargeModal({
           <Button variant="secondary" onClick={resetAndClose} disabled={submitting}>
             取消
           </Button>
-          <Button variant="gold" onClick={handleSubmit} loading={submitting} disabled={!amountStr}>
+          <Button variant="gold" onClick={handleSubmit} loading={submitting} disabled={!amountStr || !!error}>
             确认充值
           </Button>
         </>
